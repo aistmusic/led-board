@@ -18,101 +18,153 @@ const FONT = {
   "Ś": [0x32,0x49,0x4d,0x49,0x26], "Ź": [0x43,0x45,0x4d,0x51,0x61], "Ż": [0x43,0x45,0x4b,0x51,0x61]
 };
 const canvas = document.getElementById("led");
-const ctx = canvas.getContext("2d");
+const ctx = canvas.getContext("2d", { alpha: false, desynchronized: true });
 const msgEl = document.getElementById("msg");
 const speedEl = document.getElementById("speed");
 const sizeEl = document.getElementById("size");
 const colorEl = document.getElementById("color");
 const pauseBtn = document.getElementById("pause");
-let offset = 0, last = 0, running = true;
-let text = (msgEl.value || " ").toUpperCase();
 const ROWS = 7;
+let text = (msgEl.value || " ").toUpperCase();
+let running = true;
+let offsetPx = 0;
+let last = performance.now();
+let layout = null;
+let strip = null;
+let grid = null;
+let dirty = true;
 function glyph(ch) {
   const u = ch.toUpperCase();
   return FONT[u] || FONT[ch] || [0x7f, 0x41, 0x41, 0x41, 0x7f];
 }
-function textWidth(str) {
+function colsOf(str) {
   let w = 0;
   for (const ch of str) w += glyph(ch).length + 1;
-  return w + 6;
-}
-function resize() {
-  const wrap = canvas.parentElement;
-  const dpr = Math.min(devicePixelRatio || 1, 2.5);
-  canvas.width = Math.max(1, Math.floor(wrap.clientWidth * dpr));
-  canvas.height = Math.max(1, Math.floor(wrap.clientHeight * dpr));
+  return Math.max(8, w + 8);
 }
 function hexToRgb(hex) {
   const n = parseInt(hex.slice(1), 16);
   return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
 }
-function draw() {
-  const w = canvas.width, h = canvas.height;
-  ctx.fillStyle = "#050506";
-  ctx.fillRect(0, 0, w, h);
+function resize() {
+  const wrap = canvas.parentElement;
+  const dpr = Math.min(devicePixelRatio || 1, 2);
+  const w = Math.max(1, Math.floor(wrap.clientWidth * dpr));
+  const h = Math.max(1, Math.floor(wrap.clientHeight * dpr));
+  if (canvas.width !== w || canvas.height !== h) {
+    canvas.width = w;
+    canvas.height = h;
+    dirty = true;
+  }
+}
+function makeLayout() {
+  const w = canvas.width;
+  const h = canvas.height;
   const sizePref = Number(sizeEl.value);
-  const gap = Math.max(0.6, sizePref * 0.12);
-  const cell = Math.max(3, Math.min(sizePref, Math.floor((h - 20) / (ROWS + 2))));
-  const cols = Math.max(16, Math.floor((w - 16) / cell));
-  const ox = Math.floor((w - cols * cell) / 2);
+  const cell = Math.max(3, Math.min(sizePref, Math.floor((h - 16) / (ROWS + 1.5))));
+  const gap = Math.max(0.7, cell * 0.14);
+  const radius = Math.max(1.15, cell / 2 - gap);
+  const viewCols = Math.max(16, Math.floor((w - 12) / cell));
+  const ox = Math.floor((w - viewCols * cell) / 2);
   const oy = Math.floor((h - ROWS * cell) / 2);
-  const [r, g, b] = hexToRgb(colorEl.value || "#ff3b30");
-  const radius = Math.max(1.1, cell / 2 - gap);
-  ctx.fillStyle = "rgba(255,255,255,0.045)";
+  const loopCols = colsOf(text);
+  return { w, h, cell, radius, viewCols, ox, oy, loopCols, color: colorEl.value || "#ff3b30" };
+}
+function paintDots(target, cols, ox, oy, cell, radius, onBits, rgb) {
+  const tctx = target.getContext("2d");
+  const off = "rgba(255,255,255,0.05)";
   for (let y = 0; y < ROWS; y++) {
     for (let x = 0; x < cols; x++) {
-      ctx.beginPath();
-      ctx.arc(ox + x * cell + cell / 2, oy + y * cell + cell / 2, radius, 0, Math.PI * 2);
-      ctx.fill();
+      const cx = ox + x * cell + cell / 2;
+      const cy = oy + y * cell + cell / 2;
+      tctx.beginPath();
+      tctx.arc(cx, cy, radius, 0, Math.PI * 2);
+      tctx.fillStyle = off;
+      tctx.fill();
     }
   }
-  ctx.shadowColor = `rgba(${r},${g},${b},0.7)`;
-  ctx.shadowBlur = Math.max(4, cell * 0.55);
+}
+function buildCaches() {
+  layout = makeLayout();
+  const { w, h, cell, radius, viewCols, ox, oy, loopCols, color } = layout;
+  const rgb = hexToRgb(color);
+  grid = document.createElement("canvas");
+  grid.width = w;
+  grid.height = h;
+  const gctx = grid.getContext("2d");
+  gctx.fillStyle = "#050506";
+  gctx.fillRect(0, 0, w, h);
+  paintDots(grid, viewCols, ox, oy, cell, radius, null, rgb);
+  const bits = new Uint8Array(ROWS * loopCols);
   let col = 0;
-  const doubled = `${text}    ${text}`;
-  for (const ch of doubled) {
+  for (const ch of text) {
     const gph = glyph(ch);
     for (let gx = 0; gx < gph.length; gx++) {
-      const boardX = col + gx - Math.floor(offset);
-      if (boardX < 0 || boardX >= cols) continue;
-      const bits = gph[gx];
+      const bitsCol = gph[gx];
       for (let gy = 0; gy < ROWS; gy++) {
-        if (bits & (1 << (ROWS - 1 - gy))) {
-          const cx = ox + boardX * cell + cell / 2;
-          const cy = oy + gy * cell + cell / 2;
-          const grd = ctx.createRadialGradient(cx - radius * 0.25, cy - radius * 0.25, 0.2, cx, cy, radius);
-          grd.addColorStop(0, `rgb(${Math.min(255, r + 70)},${Math.min(255, g + 50)},${Math.min(255, b + 40)})`);
-          grd.addColorStop(0.55, `rgb(${r},${g},${b})`);
-          grd.addColorStop(1, `rgb(${Math.max(0, r - 50)},${Math.max(0, g - 50)},${Math.max(0, b - 50)})`);
-          ctx.fillStyle = grd;
-          ctx.beginPath();
-          ctx.arc(cx, cy, radius, 0, Math.PI * 2);
-          ctx.fill();
-        }
+        if (bitsCol & (1 << (ROWS - 1 - gy))) bits[gy * loopCols + col + gx] = 1;
       }
     }
     col += gph.length + 1;
   }
-  ctx.shadowBlur = 0;
+  strip = document.createElement("canvas");
+  strip.width = Math.max(1, loopCols * cell);
+  strip.height = Math.max(1, ROWS * cell);
+  const sctx = strip.getContext("2d");
+  for (let y = 0; y < ROWS; y++) {
+    for (let x = 0; x < loopCols; x++) {
+      if (!bits[y * loopCols + x]) continue;
+      const cx = x * cell + cell / 2;
+      const cy = y * cell + cell / 2;
+      sctx.beginPath();
+      sctx.arc(cx, cy, radius, 0, Math.PI * 2);
+      sctx.fillStyle = `rgb(${rgb[0]},${rgb[1]},${rgb[2]})`;
+      sctx.fill();
+    }
+  }
+  dirty = false;
 }
-function tick(t) {
-  requestAnimationFrame(tick);
-  const dt = Math.min(48, t - last || 16);
-  last = t;
-  if (running) {
-    offset += (Number(speedEl.value) * dt) / 1000;
-    const loopW = Math.max(1, textWidth(text) + 4);
-    if (offset > loopW) offset -= loopW;
+function draw() {
+  if (dirty || !layout || !strip || !grid) buildCaches();
+  const { cell, viewCols, ox, oy } = layout;
+  const loopW = strip.width;
+  const viewW = viewCols * cell;
+  let x = -offsetPx;
+  x = ((x % loopW) + loopW) % loopW;
+  if (x > 0) x -= loopW;
+  ctx.drawImage(grid, 0, 0);
+  ctx.save();
+  ctx.beginPath();
+  ctx.rect(ox, oy, viewW, ROWS * cell);
+  ctx.clip();
+  while (x < viewW) {
+    ctx.drawImage(strip, ox + x, oy);
+    x += loopW;
+  }
+  ctx.restore();
+}
+function tick(now) {
+  const dt = Math.min(50, now - last);
+  last = now;
+  if (running && layout) {
+    const pxPerSec = Number(speedEl.value) * (layout.cell * 0.35);
+    offsetPx += (pxPerSec * dt) / 1000;
+    if (offsetPx > 1e9) offsetPx %= layout.loopCols * layout.cell;
   }
   draw();
+  requestAnimationFrame(tick);
 }
-document.getElementById("form").addEventListener("submit", (e) => {
-  e.preventDefault();
+function applyText() {
   text = (msgEl.value || " ").toUpperCase();
-  offset = 0;
+  offsetPx = 0;
+  dirty = true;
   running = true;
   pauseBtn.textContent = "Pauza";
   try { localStorage.setItem("led-text", msgEl.value); } catch {}
+}
+document.getElementById("form").addEventListener("submit", (e) => {
+  e.preventDefault();
+  applyText();
 });
 pauseBtn.addEventListener("click", () => {
   running = !running;
@@ -123,11 +175,13 @@ document.getElementById("fs").addEventListener("click", async () => {
   if (!document.fullscreenElement) await el.requestFullscreen?.();
   else await document.exitFullscreen?.();
 });
+sizeEl.addEventListener("input", () => { dirty = true; });
+colorEl.addEventListener("input", () => { dirty = true; });
 try {
   const saved = localStorage.getItem("led-text");
   if (saved) { msgEl.value = saved; text = saved.toUpperCase(); }
 } catch {}
-window.addEventListener("resize", resize);
+window.addEventListener("resize", () => { resize(); dirty = true; });
 resize();
 requestAnimationFrame(tick);
 if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catch(() => {});

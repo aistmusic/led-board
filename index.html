@@ -29,6 +29,17 @@
     button { min-height:48px; border:0; border-radius:12px; background:var(--accent); color:#fff; font-weight:700; font-size:15px; }
     button.ghost { background:#1b1e26; color:#e8eaf0; border:1px solid var(--line); }
     .hint { font-size:11px; color:var(--muted); }
+    body.fs { height:100dvh; overflow:hidden; }
+    body.fs .panel { display:none; }
+    body.fs .board-wrap { min-height:100dvh; height:100dvh; padding:0; }
+    body.fs .board { border-radius:0; box-shadow:none; }
+    #exitFs {
+      display:none; position:fixed; top:calc(8px + env(safe-area-inset-top));
+      right:calc(8px + env(safe-area-inset-right)); z-index:20;
+      min-height:44px; min-width:44px; padding:0 12px; border:0; border-radius:12px;
+      background:rgba(20,20,24,.72); color:#fff; font-weight:700; font-size:13px;
+    }
+    body.fs #exitFs { display:block; }
   </style>
 </head>
 <body>
@@ -50,8 +61,9 @@
       <button type="submit">Start</button>
       <button type="button" class="ghost" id="pause">Pauza</button>
     </div>
-    <p class="hint">Obrót poziomy + dodaj do ekranu głównego.</p>
+    <p class="hint">Pełny chowa panel (iPhone nie ma systemowego fullscreen). Tap na tablicę też przełącza. Dodaj do ekranu głównego.</p>
   </form>
+  <button type="button" id="exitFs">Zamknij</button>
   <script src="app.js"></script>
 </body>
 </html>

@@ -170,11 +170,24 @@ pauseBtn.addEventListener("click", () => {
   running = !running;
   pauseBtn.textContent = running ? "Pauza" : "Dalej";
 });
-document.getElementById("fs").addEventListener("click", async () => {
-  const el = document.documentElement;
-  if (!document.fullscreenElement) await el.requestFullscreen?.();
-  else await document.exitFullscreen?.();
-});
+function setFs(on) {
+  document.body.classList.toggle("fs", on);
+  document.getElementById("fs").textContent = on ? "Wyjdź" : "Pełny";
+  requestAnimationFrame(() => { resize(); dirty = true; });
+  const root = document.documentElement;
+  if (on) {
+    const req = root.requestFullscreen || root.webkitRequestFullscreen;
+    try { req?.call(root); } catch {}
+    try { screen.orientation?.lock?.("landscape").catch(() => {}); } catch {}
+  } else {
+    const exit = document.exitFullscreen || document.webkitExitFullscreen;
+    try { if (document.fullscreenElement || document.webkitFullscreenElement) exit?.call(document); } catch {}
+    try { screen.orientation?.unlock?.(); } catch {}
+  }
+}
+document.getElementById("fs").addEventListener("click", () => setFs(!document.body.classList.contains("fs")));
+document.getElementById("exitFs").addEventListener("click", () => setFs(false));
+canvas.addEventListener("click", () => setFs(!document.body.classList.contains("fs")));
 sizeEl.addEventListener("input", () => { dirty = true; });
 colorEl.addEventListener("input", () => { dirty = true; });
 try {

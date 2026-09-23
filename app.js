@@ -1,59 +1,32 @@
-const FONT = {
-  " ": [0,0,0], "!": [0,0x5f,0], ".": [0,0x01,0], ",": [0,0x01,0x02], ":": [0,0x22,0],
-  "-": [0x08,0x08,0x08], "+": [0x08,0x1c,0x08], "*": [0x14,0x08,0x14], "/": [0x03,0x04,0x08,0x10,0x60], "•": [0,0x08,0],
-  "0": [0x3e,0x45,0x49,0x51,0x3e], "1": [0x00,0x21,0x7f,0x01,0x00], "2": [0x21,0x43,0x45,0x49,0x31],
-  "3": [0x42,0x41,0x51,0x69,0x46], "4": [0x0c,0x14,0x24,0x7f,0x04], "5": [0x72,0x51,0x51,0x51,0x4e],
-  "6": [0x1e,0x29,0x49,0x49,0x06], "7": [0x40,0x47,0x48,0x50,0x60], "8": [0x36,0x49,0x49,0x49,0x36], "9": [0x30,0x49,0x49,0x4a,0x3c],
-  A: [0x3f,0x48,0x48,0x48,0x3f], B: [0x7f,0x49,0x49,0x49,0x36], C: [0x3e,0x41,0x41,0x41,0x22],
-  D: [0x7f,0x41,0x41,0x41,0x3e], E: [0x7f,0x49,0x49,0x49,0x41], F: [0x7f,0x48,0x48,0x48,0x40],
-  G: [0x3e,0x41,0x49,0x49,0x2f], H: [0x7f,0x08,0x08,0x08,0x7f], I: [0x41,0x41,0x7f,0x41,0x41],
-  J: [0x02,0x01,0x01,0x01,0x7e], K: [0x7f,0x08,0x14,0x22,0x41], L: [0x7f,0x01,0x01,0x01,0x01],
-  M: [0x7f,0x20,0x18,0x20,0x7f], N: [0x7f,0x20,0x10,0x08,0x7f], O: [0x3e,0x41,0x41,0x41,0x3e],
-  P: [0x7f,0x48,0x48,0x48,0x30], Q: [0x3e,0x41,0x45,0x42,0x3d], R: [0x7f,0x48,0x4c,0x4a,0x31],
-  S: [0x32,0x49,0x49,0x49,0x26], T: [0x40,0x40,0x7f,0x40,0x40], U: [0x7e,0x01,0x01,0x01,0x7e],
-  V: [0x7c,0x02,0x01,0x02,0x7c], W: [0x7f,0x02,0x0c,0x02,0x7f], X: [0x63,0x14,0x08,0x14,0x63],
-  Y: [0x60,0x10,0x0f,0x10,0x60], Z: [0x43,0x45,0x49,0x51,0x61],
-  "Ą": [0x3f,0x48,0x48,0x4a,0x3d], "Ć": [0x3e,0x41,0x49,0x41,0x22], "Ę": [0x7f,0x49,0x49,0x4b,0x45],
-  "Ł": [0x7f,0x03,0x05,0x01,0x01], "Ń": [0x7f,0x20,0x12,0x08,0x7f], "Ó": [0x3e,0x41,0x49,0x41,0x3e],
-  "Ś": [0x32,0x49,0x4d,0x49,0x26], "Ź": [0x43,0x45,0x4d,0x51,0x61], "Ż": [0x43,0x45,0x4b,0x51,0x61]
-};
-const canvas = document.getElementById("led");
-const ctx = canvas.getContext("2d", { alpha: false, desynchronized: true });
-const msgEl = document.getElementById("msg");
-const speedEl = document.getElementById("speed");
-const sizeEl = document.getElementById("size");
-const thickEl = document.getElementById("thick");
-const gapEl = document.getElementById("gap");
-const colorEl = document.getElementById("color");
-const pauseBtn = document.getElementById("pause");
-const boldBtn = document.getElementById("bold");
-const ROWS = 7;
-let text = (msgEl.value || " ").toUpperCase();
-let running = true;
-let bold = false;
-let offsetPx = 0;
-let last = performance.now();
-let layout = null, strip = null, grid = null, dirty = true;
-function glyph(ch){const u=ch.toUpperCase();return FONT[u]||FONT[ch]||[0x7f,0x41,0x41,0x41,0x7f];}
-function letterGap(){return Number(gapEl.value);}
-function colsOf(str){let w=0;const g=letterGap();for(const ch of str)w+=glyph(ch).length+g;return Math.max(8,w+6);}
-function hexToRgb(hex){const n=parseInt(hex.slice(1),16);return[(n>>16)&255,(n>>8)&255,n&255];}
-function resize(){const wrap=canvas.parentElement;const dpr=Math.min(devicePixelRatio||1,2);const w=Math.max(1,Math.floor(wrap.clientWidth*dpr));const h=Math.max(1,Math.floor(wrap.clientHeight*dpr));if(canvas.width!==w||canvas.height!==h){canvas.width=w;canvas.height=h;dirty=true;}}
-function makeLayout(){const w=canvas.width,h=canvas.height;const maxCell=Math.max(4,Math.floor((h-8)/ROWS));const cell=Math.max(4,Math.min(Number(sizeEl.value),maxCell));const thick=Number(thickEl.value)/100;const radius=Math.max(1.1,(cell/2)*thick);const viewCols=Math.max(12,Math.floor(w/cell));const ox=Math.floor((w-viewCols*cell)/2);const oy=Math.floor((h-ROWS*cell)/2);return{w,h,cell,radius,viewCols,ox,oy,loopCols:colsOf(text),color:colorEl.value||"#ff3b30"};}
-function paintOffGrid(gctx,viewCols,ox,oy,cell,radius){gctx.fillStyle="rgba(255,255,255,0.045)";for(let y=0;y<ROWS;y++)for(let x=0;x<viewCols;x++){gctx.beginPath();gctx.arc(ox+x*cell+cell/2,oy+y*cell+cell/2,radius*0.72,0,Math.PI*2);gctx.fill();}}
-function buildCaches(){layout=makeLayout();const{w,h,cell,radius,viewCols,ox,oy,loopCols,color}=layout;const rgb=hexToRgb(color);grid=document.createElement("canvas");grid.width=w;grid.height=h;const gctx=grid.getContext("2d");gctx.fillStyle="#050506";gctx.fillRect(0,0,w,h);paintOffGrid(gctx,viewCols,ox,oy,cell,radius);const bits=new Uint8Array(ROWS*loopCols);let col=0;const g=letterGap();for(const ch of text){const gph=glyph(ch);for(let gx=0;gx<gph.length;gx++){const bitsCol=gph[gx];for(let gy=0;gy<ROWS;gy++){if(bitsCol&(1<<(ROWS-1-gy))){const idx=gy*loopCols+col+gx;bits[idx]=1;if(bold&&col+gx+1<loopCols)bits[idx+1]=1;}}}col+=gph.length+g;}strip=document.createElement("canvas");strip.width=Math.max(1,loopCols*cell);strip.height=Math.max(1,ROWS*cell);const sctx=strip.getContext("2d");sctx.fillStyle=`rgb(${rgb[0]},${rgb[1]},${rgb[2]})`;for(let y=0;y<ROWS;y++)for(let x=0;x<loopCols;x++){if(!bits[y*loopCols+x])continue;sctx.beginPath();sctx.arc(x*cell+cell/2,y*cell+cell/2,radius,0,Math.PI*2);sctx.fill();}dirty=false;}
-function draw(){if(dirty||!layout||!strip||!grid)buildCaches();const{cell,viewCols,ox,oy}=layout;const loopW=strip.width;const viewW=viewCols*cell;let x=-offsetPx;x=((x%loopW)+loopW)%loopW;if(x>0)x-=loopW;ctx.drawImage(grid,0,0);ctx.save();ctx.beginPath();ctx.rect(ox,oy,viewW,ROWS*cell);ctx.clip();while(x<viewW){ctx.drawImage(strip,ox+x,oy);x+=loopW;}ctx.restore();}
-function tick(now){const dt=Math.min(50,now-last);last=now;if(running&&layout){offsetPx+=(Number(speedEl.value)*(layout.cell*0.32)*dt)/1000;if(offsetPx>1e9)offsetPx%=Math.max(1,layout.loopCols*layout.cell);}draw();requestAnimationFrame(tick);}
-function save(){try{localStorage.setItem("led-cfg",JSON.stringify({text:msgEl.value,speed:speedEl.value,size:sizeEl.value,thick:thickEl.value,gap:gapEl.value,color:colorEl.value,bold}));}catch{}}
-function load(){try{const cfg=JSON.parse(localStorage.getItem("led-cfg")||"null");if(!cfg)return;if(cfg.text){msgEl.value=cfg.text;text=cfg.text.toUpperCase();}if(cfg.speed)speedEl.value=cfg.speed;if(cfg.size)sizeEl.value=cfg.size;if(cfg.thick)thickEl.value=cfg.thick;if(cfg.gap!=null)gapEl.value=cfg.gap;if(cfg.color)colorEl.value=cfg.color;bold=!!cfg.bold;}catch{}}
-function syncLabels(){document.getElementById("sizeVal").textContent=sizeEl.value;document.getElementById("thickVal").textContent=thickEl.value;document.getElementById("gapVal").textContent=gapEl.value;document.getElementById("speedVal").textContent=speedEl.value;boldBtn.classList.toggle("on",bold);}
-function applyText(){text=(msgEl.value||" ").toUpperCase();offsetPx=0;dirty=true;running=true;pauseBtn.textContent="Pauza";save();}
-document.getElementById("form").addEventListener("submit",e=>{e.preventDefault();applyText();});
-pauseBtn.addEventListener("click",()=>{running=!running;pauseBtn.textContent=running?"Pauza":"Dalej";});
-boldBtn.addEventListener("click",()=>{bold=!bold;dirty=true;syncLabels();save();});
-function setFs(on){document.body.classList.toggle("fs",on);requestAnimationFrame(()=>{resize();dirty=true;});const root=document.documentElement;if(on){try{(root.requestFullscreen||root.webkitRequestFullscreen)?.call(root);}catch{}try{screen.orientation?.lock?.("landscape").catch(()=>{});}catch{}}else{try{if(document.fullscreenElement||document.webkitFullscreenElement){(document.exitFullscreen||document.webkitExitFullscreen)?.call(document);}}catch{}try{screen.orientation?.unlock?.();}catch{}}}
+const FONT={" ":[0,0,0],"!":[0,0x5f,0],".":[0,0x01,0],",":[0,0x01,0x02],":":[0,0x22,0],"-":[0x08,0x08,0x08],"+":[0x08,0x1c,0x08],"*":[0x14,0x08,0x14],"/":[0x03,0x04,0x08,0x10,0x60],"•":[0,0x08,0],"0":[0x3e,0x45,0x49,0x51,0x3e],"1":[0x00,0x21,0x7f,0x01,0x00],"2":[0x21,0x43,0x45,0x49,0x31],"3":[0x42,0x41,0x51,0x69,0x46],"4":[0x0c,0x14,0x24,0x7f,0x04],"5":[0x72,0x51,0x51,0x51,0x4e],"6":[0x1e,0x29,0x49,0x49,0x06],"7":[0x40,0x47,0x48,0x50,0x60],"8":[0x36,0x49,0x49,0x49,0x36],"9":[0x30,0x49,0x49,0x4a,0x3c],A:[0x3f,0x48,0x48,0x48,0x3f],B:[0x7f,0x49,0x49,0x49,0x36],C:[0x3e,0x41,0x41,0x41,0x22],D:[0x7f,0x41,0x41,0x41,0x3e],E:[0x7f,0x49,0x49,0x49,0x41],F:[0x7f,0x48,0x48,0x48,0x40],G:[0x3e,0x41,0x49,0x49,0x2f],H:[0x7f,0x08,0x08,0x08,0x7f],I:[0x41,0x41,0x7f,0x41,0x41],J:[0x02,0x01,0x01,0x01,0x7e],K:[0x7f,0x08,0x14,0x22,0x41],L:[0x7f,0x01,0x01,0x01,0x01],M:[0x7f,0x20,0x18,0x20,0x7f],N:[0x7f,0x20,0x10,0x08,0x7f],O:[0x3e,0x41,0x41,0x41,0x3e],P:[0x7f,0x48,0x48,0x48,0x30],Q:[0x3e,0x41,0x45,0x42,0x3d],R:[0x7f,0x48,0x4c,0x4a,0x31],S:[0x32,0x49,0x49,0x49,0x26],T:[0x40,0x40,0x7f,0x40,0x40],U:[0x7e,0x01,0x01,0x01,0x7e],V:[0x7c,0x02,0x01,0x02,0x7c],W:[0x7f,0x02,0x0c,0x02,0x7f],X:[0x63,0x14,0x08,0x14,0x63],Y:[0x60,0x10,0x0f,0x10,0x60],Z:[0x43,0x45,0x49,0x51,0x61],"Ą":[0x3f,0x48,0x48,0x4a,0x3d],"Ć":[0x3e,0x41,0x49,0x41,0x22],"Ę":[0x7f,0x49,0x49,0x4b,0x45],"Ł":[0x7f,0x03,0x05,0x01,0x01],"Ń":[0x7f,0x20,0x12,0x08,0x7f],"Ó":[0x3e,0x41,0x49,0x41,0x3e],"Ś":[0x32,0x49,0x4d,0x49,0x26],"Ź":[0x43,0x45,0x4d,0x51,0x61],"Ż":[0x43,0x45,0x4b,0x51,0x61]};
+const canvas=document.getElementById("led");
+const ctx=canvas.getContext("2d",{alpha:false,desynchronized:true});
+const msgEl=document.getElementById("msg"),speedEl=document.getElementById("speed"),sizeEl=document.getElementById("size"),thickEl=document.getElementById("thick"),gapEl=document.getElementById("gap"),colorEl=document.getElementById("color"),pauseBtn=document.getElementById("pause"),boldBtn=document.getElementById("bold");
+const ROWS=7;
+let text=(msgEl.value||" ").toUpperCase(),running=true,bold=false,offsetPx=0,last=performance.now(),layout=null,strip=null,grid=null,dirty=true;
+function glyph(ch){const u=ch.toUpperCase();return FONT[u]||FONT[ch]||[0x7f,0x41,0x41,0x41,0x7f]}
+function letterGap(){return Number(gapEl.value)}
+function scaleOf(){return Math.max(1,Math.round(Number(sizeEl.value)/8))}
+function colsOf(str){let w=0;const g=letterGap(),s=scaleOf();for(const ch of str)w+=glyph(ch).length*s+g*s;return Math.max(8,w+8*s)}
+function hexToRgb(hex){const n=parseInt(hex.slice(1),16);return[(n>>16)&255,(n>>8)&255,n&255]}
+function resize(){const wrap=canvas.parentElement,dpr=Math.min(devicePixelRatio||1,2),w=Math.max(1,Math.floor(wrap.clientWidth*dpr)),h=Math.max(1,Math.floor(wrap.clientHeight*dpr));if(canvas.width!==w||canvas.height!==h){canvas.width=w;canvas.height=h;dirty=true}}
+function makeLayout(){const w=canvas.width,h=canvas.height,s=scaleOf(),textRows=ROWS*s,cell=Math.max(3,Math.floor(h/Math.max(textRows,7))),viewRows=Math.max(textRows,Math.floor(h/cell)),viewCols=Math.max(12,Math.floor(w/cell)),thick=Number(thickEl.value)/100,radius=Math.max(1.05,(cell/2)*thick),ox=Math.floor((w-viewCols*cell)/2),oy=Math.floor((h-viewRows*cell)/2),textOy=oy+Math.floor((viewRows-textRows)/2)*cell;return{w,h,cell,radius,viewCols,viewRows,ox,oy,textOy,textRows,scale:s,loopCols:colsOf(text),color:colorEl.value||"#ff3b30"}}
+function paintOffGrid(gctx,viewCols,viewRows,ox,oy,cell,radius){gctx.fillStyle="rgba(255,255,255,0.05)";for(let y=0;y<viewRows;y++)for(let x=0;x<viewCols;x++){gctx.beginPath();gctx.arc(ox+x*cell+cell/2,oy+y*cell+cell/2,radius*0.7,0,Math.PI*2);gctx.fill()}}
+function buildCaches(){layout=makeLayout();const{w,h,cell,radius,viewCols,viewRows,ox,oy,loopCols,color,scale}=layout,rgb=hexToRgb(color),textRows=ROWS*scale;grid=document.createElement("canvas");grid.width=w;grid.height=h;const gctx=grid.getContext("2d");gctx.fillStyle="#050506";gctx.fillRect(0,0,w,h);paintOffGrid(gctx,viewCols,viewRows,ox,oy,cell,radius);const bits=new Uint8Array(textRows*loopCols);let col=0;const g=letterGap()*scale;for(const ch of text){const gph=glyph(ch);for(let gx=0;gx<gph.length;gx++){const bitsCol=gph[gx];for(let gy=0;gy<ROWS;gy++){if(bitsCol&(1<<(ROWS-1-gy))){for(let sy=0;sy<scale;sy++)for(let sx=0;sx<scale;sx++){const x=col+gx*scale+sx,y=gy*scale+sy;if(x>=loopCols)continue;bits[y*loopCols+x]=1;if(bold&&x+1<loopCols)bits[y*loopCols+x+1]=1}}}}col+=gph.length*scale+g}strip=document.createElement("canvas");strip.width=Math.max(1,loopCols*cell);strip.height=Math.max(1,textRows*cell);const sctx=strip.getContext("2d");sctx.fillStyle=`rgb(${rgb[0]},${rgb[1]},${rgb[2]})`;for(let y=0;y<textRows;y++)for(let x=0;x<loopCols;x++){if(!bits[y*loopCols+x])continue;sctx.beginPath();sctx.arc(x*cell+cell/2,y*cell+cell/2,radius,0,Math.PI*2);sctx.fill()}dirty=false}
+function draw(){if(dirty||!layout||!strip||!grid)buildCaches();const{cell,viewCols,ox,textOy,textRows}=layout,loopW=strip.width,viewW=viewCols*cell;let x=-offsetPx;x=((x%loopW)+loopW)%loopW;if(x>0)x-=loopW;ctx.drawImage(grid,0,0);ctx.save();ctx.beginPath();ctx.rect(ox,textOy,viewW,textRows*cell);ctx.clip();while(x<viewW){ctx.drawImage(strip,ox+x,textOy);x+=loopW}ctx.restore()}
+function tick(now){const dt=Math.min(50,now-last);last=now;if(running&&layout){offsetPx+=(Number(speedEl.value)*(layout.cell*0.32)*dt)/1000;if(offsetPx>1e9)offsetPx%=Math.max(1,layout.loopCols*layout.cell)}draw();requestAnimationFrame(tick)}
+function save(){try{localStorage.setItem("led-cfg",JSON.stringify({text:msgEl.value,speed:speedEl.value,size:sizeEl.value,thick:thickEl.value,gap:gapEl.value,color:colorEl.value,bold}))}catch{}}
+function load(){try{const cfg=JSON.parse(localStorage.getItem("led-cfg")||"null");if(!cfg)return;if(cfg.text){msgEl.value=cfg.text;text=cfg.text.toUpperCase()}if(cfg.speed)speedEl.value=cfg.speed;if(cfg.size)sizeEl.value=cfg.size;if(cfg.thick)thickEl.value=cfg.thick;if(cfg.gap!=null)gapEl.value=cfg.gap;if(cfg.color)colorEl.value=cfg.color;bold=!!cfg.bold}catch{}}
+function syncLabels(){document.getElementById("sizeVal").textContent=sizeEl.value;document.getElementById("thickVal").textContent=thickEl.value;document.getElementById("gapVal").textContent=gapEl.value;document.getElementById("speedVal").textContent=speedEl.value;boldBtn.classList.toggle("on",bold)}
+function applyText(){text=(msgEl.value||" ").toUpperCase();offsetPx=0;dirty=true;running=true;pauseBtn.textContent="Pauza";save()}
+document.getElementById("form").addEventListener("submit",e=>{e.preventDefault();applyText()});
+pauseBtn.addEventListener("click",()=>{running=!running;pauseBtn.textContent=running?"Pauza":"Dalej"});
+boldBtn.addEventListener("click",()=>{bold=!bold;dirty=true;syncLabels();save()});
+function setFs(on){document.body.classList.toggle("fs",on);requestAnimationFrame(()=>{resize();dirty=true});const root=document.documentElement;if(on){try{(root.requestFullscreen||root.webkitRequestFullscreen)?.call(root)}catch{}try{screen.orientation?.lock?.("landscape").catch(()=>{})}catch{}}else{try{if(document.fullscreenElement||document.webkitFullscreenElement){(document.exitFullscreen||document.webkitExitFullscreen)?.call(document)}}catch{}try{screen.orientation?.unlock?.()}catch{}}}
 document.getElementById("fs").addEventListener("click",()=>setFs(true));
-canvas.addEventListener("click",()=>{if(document.body.classList.contains("fs"))setFs(false);});
-[sizeEl,thickEl,gapEl,speedEl,colorEl].forEach(el=>el.addEventListener("input",()=>{syncLabels();dirty=true;save();}));
-load();syncLabels();window.addEventListener("resize",()=>{resize();dirty=true;});resize();requestAnimationFrame(tick);
+canvas.addEventListener("click",()=>{if(document.body.classList.contains("fs"))setFs(false)});
+[sizeEl,thickEl,gapEl,speedEl,colorEl].forEach(el=>el.addEventListener("input",()=>{syncLabels();dirty=true;save()}));
+load();syncLabels();window.addEventListener("resize",()=>{resize();dirty=true});resize();
+try{screen.orientation?.lock?.("landscape").catch(()=>{})}catch{}
+requestAnimationFrame(tick);
 if("serviceWorker" in navigator)navigator.serviceWorker.register("sw.js").catch(()=>{});

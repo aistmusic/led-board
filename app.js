@@ -27,7 +27,11 @@ document.getElementById("swatches").addEventListener("click",e=>{const b=e.targe
 function setFs(on){document.body.classList.toggle("fs",on);requestAnimationFrame(()=>{resize();dirty=true});const root=document.documentElement;if(on){try{(root.requestFullscreen||root.webkitRequestFullscreen)?.call(root)}catch{}try{screen.orientation?.lock?.("landscape").catch(()=>{})}catch{}}else{try{if(document.fullscreenElement||document.webkitFullscreenElement){(document.exitFullscreen||document.webkitExitFullscreen)?.call(document)}}catch{}}}
 document.getElementById("fs").addEventListener("click",()=>setFs(true));
 canvas.addEventListener("click",()=>{if(document.body.classList.contains("fs"))setFs(false)});
-[sizeEl,thickEl,gapEl,speedEl].forEach(el=>el.addEventListener("input",()=>{syncLabels();dirty=true;save()}));
+function nudge(id,dir){const el=document.getElementById(id);const min=Number(el.min),max=Number(el.max),step=Number(el.step)||1;const next=Math.min(max,Math.max(min,Number(el.value)+dir*step));if(next===Number(el.value))return;el.value=String(next);dirty=true;syncLabels();save()}
+let holdT=0,holdI=0;
+function startHold(btn){const id=btn.dataset.for,dir=btn.dataset.dir==="+"?1:-1;nudge(id,dir);clearTimeout(holdT);clearInterval(holdI);holdT=setTimeout(()=>{holdI=setInterval(()=>nudge(id,dir),70)},320)}
+function stopHold(){clearTimeout(holdT);clearInterval(holdI)}
+document.querySelectorAll(".pm").forEach(btn=>{btn.addEventListener("pointerdown",e=>{e.preventDefault();startHold(btn)});btn.addEventListener("pointerup",stopHold);btn.addEventListener("pointerleave",stopHold);btn.addEventListener("pointercancel",stopHold)});
 load();syncLabels();window.addEventListener("resize",()=>{resize();dirty=true});resize();
 try{screen.orientation?.lock?.("landscape").catch(()=>{})}catch{}
 requestAnimationFrame(tick);

@@ -29,11 +29,11 @@
     .brand { font-size:11px; letter-spacing:.16em; text-transform:uppercase; color:var(--muted); font-weight:700; }
     .msg { width:100%; min-height:44px; border:1px solid var(--line); background:var(--card); color:#fff; border-radius:11px; padding:11px 12px; font-size:16px; }
     .grid2 { display:grid; grid-template-columns:1fr 1fr; gap:7px; }
-    .grid3 { display:grid; grid-template-columns:1fr 1fr 1fr; gap:7px; }
-    .ctl { background:var(--card); border:1px solid var(--line); border-radius:11px; padding:7px 9px 5px; }
-    .ctl label { display:flex; justify-content:space-between; font-size:10px; letter-spacing:.04em; text-transform:uppercase; color:var(--muted); }
-    .ctl b { color:var(--text); font-variant-numeric:tabular-nums; }
-    input[type=range] { width:100%; height:26px; accent-color:var(--accent); }
+    .ctl { background:var(--card); border:1px solid var(--line); border-radius:11px; padding:8px; }
+    .ctl label { display:block; font-size:10px; letter-spacing:.04em; text-transform:uppercase; color:var(--muted); margin-bottom:6px; }
+    .step { display:grid; grid-template-columns:44px 1fr 44px; gap:6px; align-items:center; }
+    .step b { text-align:center; font-size:16px; font-variant-numeric:tabular-nums; }
+    .pm { min-height:44px; min-width:44px; padding:0; font-size:22px; line-height:1; background:#1d1f28; color:#fff; border:1px solid var(--line); border-radius:10px; }
     .swatches { display:flex; gap:6px; }
     .sw { width:28px; height:28px; border-radius:50%; border:2px solid #0000; }
     .sw.on { border-color:#fff; }
@@ -51,24 +51,21 @@
   <form class="panel" id="form">
     <div class="brand">LED Board</div>
     <input id="msg" class="msg" type="text" autocomplete="off" maxlength="240" value="CO SLYCHAC?" />
-    <div class="grid3">
-      <div class="ctl"><label for="size">Wielkość <b id="sizeVal">24</b></label><input id="size" type="range" min="8" max="56" value="24" /></div>
-      <div class="ctl"><label for="thick">Grubość <b id="thickVal">78</b></label><input id="thick" type="range" min="35" max="96" value="78" /></div>
-      <div class="ctl"><label for="gap">Odstęp <b id="gapVal">1</b></label><input id="gap" type="range" min="0" max="5" value="1" /></div>
-    </div>
     <div class="grid2">
-      <div class="ctl"><label for="speed">Prędkość <b id="speedVal">16</b></label><input id="speed" type="range" min="2" max="80" value="16" /></div>
-      <div class="ctl">
-        <label>Kolor</label>
-        <div class="swatches" id="swatches">
-          <button type="button" class="sw on" data-c="#ffe84a" style="background:#ffe84a"></button>
-          <button type="button" class="sw" data-c="#ff3b30" style="background:#ff3b30"></button>
-          <button type="button" class="sw" data-c="#39ff14" style="background:#39ff14"></button>
-          <button type="button" class="sw" data-c="#4da3ff" style="background:#4da3ff"></button>
-          <button type="button" class="sw" data-c="#ffffff" style="background:#fff"></button>
-        </div>
-        <input id="color" type="color" value="#ffe84a" hidden />
+      <div class="ctl"><label>Wielkość</label><div class="step"><button type="button" class="pm" data-for="size" data-dir="-">−</button><b id="sizeVal">24</b><button type="button" class="pm" data-for="size" data-dir="+">+</button></div><input id="size" type="hidden" min="8" max="56" step="4" value="24" /></div>
+      <div class="ctl"><label>Grubość</label><div class="step"><button type="button" class="pm" data-for="thick" data-dir="-">−</button><b id="thickVal">78</b><button type="button" class="pm" data-for="thick" data-dir="+">+</button></div><input id="thick" type="hidden" min="35" max="96" step="5" value="78" /></div>
+      <div class="ctl"><label>Odstęp</label><div class="step"><button type="button" class="pm" data-for="gap" data-dir="-">−</button><b id="gapVal">1</b><button type="button" class="pm" data-for="gap" data-dir="+">+</button></div><input id="gap" type="hidden" min="0" max="5" step="1" value="1" /></div>
+      <div class="ctl"><label>Prędkość</label><div class="step"><button type="button" class="pm" data-for="speed" data-dir="-">−</button><b id="speedVal">16</b><button type="button" class="pm" data-for="speed" data-dir="+">+</button></div><input id="speed" type="hidden" min="2" max="80" step="2" value="16" /></div>
+    </div>
+    <div class="ctl"><label>Kolor</label>
+      <div class="swatches" id="swatches">
+        <button type="button" class="sw on" data-c="#ffe84a" style="background:#ffe84a"></button>
+        <button type="button" class="sw" data-c="#ff3b30" style="background:#ff3b30"></button>
+        <button type="button" class="sw" data-c="#39ff14" style="background:#39ff14"></button>
+        <button type="button" class="sw" data-c="#4da3ff" style="background:#4da3ff"></button>
+        <button type="button" class="sw" data-c="#ffffff" style="background:#fff"></button>
       </div>
+      <input id="color" type="color" value="#ffe84a" hidden />
     </div>
     <div class="actions">
       <button type="submit">Start</button>

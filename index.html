@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no" />
-  <meta name="theme-color" content="#07070a" />
+  <meta name="theme-color" content="#050507" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="mobile-web-app-capable" content="yes" />
@@ -11,59 +11,54 @@
   <link rel="manifest" href="manifest.json" />
   <link rel="icon" href="icon.svg" type="image/svg+xml" />
   <style>
-    :root { --bg:#07070a; --panel:#101218; --line:#242833; --text:#f3f4f6; --muted:#8b90a0; --accent:#ff3b30; }
+    :root { --bg:#050507; --panel:#0d0e13; --card:#15161d; --line:#2a2d38; --text:#f4f5f7; --muted:#8d92a3; --accent:#ff3b30; }
     * { box-sizing:border-box; margin:0; padding:0; }
     html, body { height:100%; background:var(--bg); color:var(--text); font-family:-apple-system,BlinkMacSystemFont,system-ui,sans-serif; }
     body { display:flex; flex-direction:column; min-height:100dvh; }
-    .board-wrap { flex:1; display:flex; min-height:52vh; padding:calc(10px + env(safe-area-inset-top)) 10px 8px; }
-    .board { flex:1; border-radius:14px; overflow:hidden; background:radial-gradient(120% 80% at 50% 0%, #1a1d24 0%, #050506 70%); box-shadow:inset 0 0 0 1px #2a2e38, 0 12px 40px rgba(0,0,0,.45); }
-    canvas { width:100%; height:100%; display:block; }
-    .panel { padding:14px 16px calc(18px + env(safe-area-inset-bottom)); background:var(--panel); border-top:1px solid var(--line); display:grid; gap:12px; }
-    label { font-size:11px; letter-spacing:.04em; text-transform:uppercase; color:var(--muted); display:block; margin-bottom:6px; }
-    input[type=text] { width:100%; min-height:48px; border:1px solid var(--line); background:#0b0c10; color:#fff; border-radius:12px; padding:12px 14px; font-size:16px; }
-    .row { display:grid; grid-template-columns:1fr 88px; gap:10px; align-items:end; }
-    .controls { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
-    input[type=range] { width:100%; min-height:36px; accent-color:var(--accent); }
-    input[type=color] { width:100%; height:44px; border:1px solid var(--line); border-radius:12px; background:#0b0c10; padding:4px; }
-    .actions { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
-    button { min-height:48px; border:0; border-radius:12px; background:var(--accent); color:#fff; font-weight:700; font-size:15px; }
-    button.ghost { background:#1b1e26; color:#e8eaf0; border:1px solid var(--line); }
-    .hint { font-size:11px; color:var(--muted); }
+    .board-wrap { flex:1; display:flex; min-height:38vh; padding:calc(8px + env(safe-area-inset-top)) 10px 8px; }
+    .board { flex:1; border-radius:16px; overflow:hidden; background:#050506; box-shadow:inset 0 0 0 1px #262833; }
+    canvas { width:100%; height:100%; display:block; touch-action:manipulation; }
+    .panel { padding:12px 14px calc(14px + env(safe-area-inset-bottom)); background:var(--panel); border-top:1px solid var(--line); display:grid; gap:10px; }
+    .msg { width:100%; min-height:46px; border:1px solid var(--line); background:var(--card); color:#fff; border-radius:12px; padding:12px 14px; font-size:16px; }
+    .grid2 { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+    .grid3 { display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; }
+    .ctl { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:8px 10px 6px; }
+    .ctl label { display:flex; justify-content:space-between; font-size:10px; letter-spacing:.04em; text-transform:uppercase; color:var(--muted); margin-bottom:2px; }
+    .ctl b { color:var(--text); font-weight:650; font-variant-numeric:tabular-nums; }
+    input[type=range] { width:100%; height:28px; accent-color:var(--accent); }
+    input[type=color] { width:100%; height:46px; border:1px solid var(--line); border-radius:12px; background:var(--card); padding:4px; }
+    .actions { display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; }
+    button { min-height:46px; border:0; border-radius:12px; background:var(--accent); color:#fff; font-weight:700; font-size:14px; }
+    button.ghost { background:var(--card); color:var(--text); border:1px solid var(--line); }
+    button.on { background:#2a1a12; color:#ffb4ae; border-color:#5a2a24; }
+    .hint { font-size:11px; color:var(--muted); text-align:center; }
     body.fs { height:100dvh; overflow:hidden; }
-    body.fs .panel { display:none; }
+    body.fs .panel { display:none !important; }
     body.fs .board-wrap { min-height:100dvh; height:100dvh; padding:0; }
     body.fs .board { border-radius:0; box-shadow:none; }
-    #exitFs {
-      display:none; position:fixed; top:calc(8px + env(safe-area-inset-top));
-      right:calc(8px + env(safe-area-inset-right)); z-index:20;
-      min-height:44px; min-width:44px; padding:0 12px; border:0; border-radius:12px;
-      background:rgba(20,20,24,.72); color:#fff; font-weight:700; font-size:13px;
-    }
-    body.fs #exitFs { display:block; }
   </style>
 </head>
 <body>
   <div class="board-wrap"><div class="board"><canvas id="led" aria-label="Tablica LED"></canvas></div></div>
   <form class="panel" id="form">
-    <div>
-      <label for="msg">Tekst</label>
-      <input id="msg" type="text" autocomplete="off" maxlength="240" value="LED BOARD • WITAJ" />
+    <input id="msg" class="msg" type="text" autocomplete="off" maxlength="240" value="LED BOARD • WITAJ" />
+    <div class="grid3">
+      <div class="ctl"><label for="size">Wielkość <b id="sizeVal">18</b></label><input id="size" type="range" min="8" max="56" value="18" /></div>
+      <div class="ctl"><label for="thick">Grubość <b id="thickVal">70</b></label><input id="thick" type="range" min="25" max="100" value="70" /></div>
+      <div class="ctl"><label for="gap">Odstęp <b id="gapVal">1</b></label><input id="gap" type="range" min="0" max="5" value="1" /></div>
     </div>
-    <div class="controls">
-      <div><label for="speed">Prędkość</label><input id="speed" type="range" min="4" max="80" value="14" /></div>
-      <div><label for="size">Gęstość LED</label><input id="size" type="range" min="4" max="14" value="7" /></div>
-    </div>
-    <div class="row">
-      <div><label for="color">Kolor</label><input id="color" type="color" value="#ff3b30" /></div>
-      <button type="button" class="ghost" id="fs">Pełny</button>
+    <div class="grid2">
+      <div class="ctl"><label for="speed">Prędkość <b id="speedVal">14</b></label><input id="speed" type="range" min="2" max="80" value="14" /></div>
+      <div class="ctl"><label for="color">Kolor</label><input id="color" type="color" value="#ff3b30" /></div>
     </div>
     <div class="actions">
       <button type="submit">Start</button>
       <button type="button" class="ghost" id="pause">Pauza</button>
+      <button type="button" class="ghost" id="bold">Bold</button>
     </div>
-    <p class="hint">Pełny chowa panel (iPhone nie ma systemowego fullscreen). Tap na tablicę też przełącza. Dodaj do ekranu głównego.</p>
+    <button type="button" class="ghost" id="fs" style="width:100%">Pełny ekran</button>
+    <p class="hint">W pełnym tap na tablicę = powrót.</p>
   </form>
-  <button type="button" id="exitFs">Zamknij</button>
   <script src="app.js"></script>
 </body>
 </html>

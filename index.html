@@ -13,10 +13,17 @@
   <style>
     :root { --bg:#050507; --panel:#0d0e13; --card:#15161d; --line:#2a2d38; --text:#f4f5f7; --muted:#8d92a3; --accent:#ff3b30; }
     * { box-sizing:border-box; margin:0; padding:0; }
-    html, body { height:100%; background:var(--bg); color:var(--text); font-family:-apple-system,BlinkMacSystemFont,system-ui,sans-serif; }
+    html, body { height:100%; overflow:hidden; background:var(--bg); color:var(--text); font-family:-apple-system,BlinkMacSystemFont,system-ui,sans-serif; }
     body { display:flex; flex-direction:column; min-height:100dvh; }
-    .board-wrap { flex:1; display:flex; min-height:38vh; padding:calc(8px + env(safe-area-inset-top)) 10px 8px; }
-    .board { flex:1; border-radius:16px; overflow:hidden; background:#050506; box-shadow:inset 0 0 0 1px #262833; }
+    .board-wrap { flex:1; display:flex; min-height:0; padding:0; }
+    .board { flex:1; border-radius:0; overflow:hidden; background:#050506; }
+    .rotate { display:none; position:fixed; inset:0; z-index:30; background:#050507; color:#fff; align-items:center; justify-content:center; text-align:center; padding:24px; font-size:18px; font-weight:650; }
+    @media (orientation: portrait) and (max-width: 700px) { .rotate { display:flex; } }
+    @media (orientation: landscape) {
+      body { flex-direction:row; }
+      .board-wrap { min-height:100dvh; height:100dvh; }
+      .panel { width:min(320px,38vw); max-height:100dvh; overflow:auto; border-top:0; border-left:1px solid var(--line); padding-top:calc(10px + env(safe-area-inset-top)); }
+    }
     canvas { width:100%; height:100%; display:block; touch-action:manipulation; }
     .panel { padding:12px 14px calc(14px + env(safe-area-inset-bottom)); background:var(--panel); border-top:1px solid var(--line); display:grid; gap:10px; }
     .msg { width:100%; min-height:46px; border:1px solid var(--line); background:var(--card); color:#fff; border-radius:12px; padding:12px 14px; font-size:16px; }
@@ -35,7 +42,7 @@
     body.fs { height:100dvh; overflow:hidden; }
     body.fs .panel { display:none !important; }
     body.fs .board-wrap { min-height:100dvh; height:100dvh; padding:0; }
-    body.fs .board { border-radius:0; box-shadow:none; }
+    body.fs .board { border-radius:0; }
   </style>
 </head>
 <body>
@@ -57,8 +64,9 @@
       <button type="button" class="ghost" id="bold">Bold</button>
     </div>
     <button type="button" class="ghost" id="fs" style="width:100%">Pełny ekran</button>
-    <p class="hint">W pełnym tap na tablicę = powrót.</p>
+    <p class="hint">Poziomo. Pełny = cała tablica, tap = powrót.</p>
   </form>
+  <div class="rotate">Obróć telefon poziomo</div>
   <script src="app.js"></script>
 </body>
 </html>

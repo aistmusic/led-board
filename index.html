@@ -34,9 +34,11 @@
     .step { display:grid; grid-template-columns:44px 1fr 44px; gap:6px; align-items:center; }
     .step b { text-align:center; font-size:16px; font-variant-numeric:tabular-nums; }
     .pm { min-height:44px; min-width:44px; padding:0; font-size:22px; line-height:1; background:#1d1f28; color:#fff; border:1px solid var(--line); border-radius:10px; }
-    .swatches { display:flex; gap:6px; }
-    .sw { width:28px; height:28px; border-radius:50%; border:2px solid #0000; }
-    .sw.on { border-color:#fff; }
+    .color-wrap { display:flex; align-items:center; gap:10px; }
+    .color-round { -webkit-appearance:none; appearance:none; width:52px; height:52px; padding:0; border:0; border-radius:50%; overflow:hidden; background:transparent; }
+    .color-round::-webkit-color-swatch-wrapper { padding:0; border:none; }
+    .color-round::-webkit-color-swatch { border:none; border-radius:50%; }
+    .color-round::-moz-color-swatch { border:none; border-radius:50%; }
     .actions { display:grid; grid-template-columns:1fr 1fr 1fr; gap:7px; }
     button { min-height:44px; border:0; border-radius:11px; background:var(--accent); color:#111; font-weight:800; font-size:13px; }
     button.ghost { background:var(--card); color:var(--text); border:1px solid var(--line); }
@@ -52,21 +54,12 @@
     <div class="brand">LED Board</div>
     <input id="msg" class="msg" type="text" autocomplete="off" maxlength="240" value="CO SLYCHAC?" />
     <div class="grid2">
-      <div class="ctl"><label>Wielkość</label><div class="step"><button type="button" class="pm" data-for="size" data-dir="-">−</button><b id="sizeVal">24</b><button type="button" class="pm" data-for="size" data-dir="+">+</button></div><input id="size" type="hidden" min="8" max="56" step="4" value="24" /></div>
+      <div class="ctl"><label>Wielkość</label><div class="step"><button type="button" class="pm" data-for="size" data-dir="-">−</button><b id="sizeVal">4</b><button type="button" class="pm" data-for="size" data-dir="+">+</button></div><input id="size" type="hidden" min="1" max="8" step="1" value="4" /></div>
       <div class="ctl"><label>Grubość</label><div class="step"><button type="button" class="pm" data-for="thick" data-dir="-">−</button><b id="thickVal">78</b><button type="button" class="pm" data-for="thick" data-dir="+">+</button></div><input id="thick" type="hidden" min="35" max="96" step="5" value="78" /></div>
       <div class="ctl"><label>Odstęp</label><div class="step"><button type="button" class="pm" data-for="gap" data-dir="-">−</button><b id="gapVal">1</b><button type="button" class="pm" data-for="gap" data-dir="+">+</button></div><input id="gap" type="hidden" min="0" max="5" step="1" value="1" /></div>
       <div class="ctl"><label>Prędkość</label><div class="step"><button type="button" class="pm" data-for="speed" data-dir="-">−</button><b id="speedVal">16</b><button type="button" class="pm" data-for="speed" data-dir="+">+</button></div><input id="speed" type="hidden" min="2" max="80" step="2" value="16" /></div>
     </div>
-    <div class="ctl"><label>Kolor</label>
-      <div class="swatches" id="swatches">
-        <button type="button" class="sw on" data-c="#ffe84a" style="background:#ffe84a"></button>
-        <button type="button" class="sw" data-c="#ff3b30" style="background:#ff3b30"></button>
-        <button type="button" class="sw" data-c="#39ff14" style="background:#39ff14"></button>
-        <button type="button" class="sw" data-c="#4da3ff" style="background:#4da3ff"></button>
-        <button type="button" class="sw" data-c="#ffffff" style="background:#fff"></button>
-      </div>
-      <input id="color" type="color" value="#ffe84a" hidden />
-    </div>
+    <div class="ctl"><label>Kolor</label><div class="color-wrap"><input id="color" class="color-round" type="color" value="#ff3b30" /><span class="hint" style="text-align:left">Dotknij koła</span></div></div>
     <div class="actions">
       <button type="submit">Start</button>
       <button type="button" class="ghost" id="pause">Pauza</button>

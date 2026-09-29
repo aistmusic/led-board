@@ -1,5 +1,5 @@
-const CACHE = "led-board-v10";
-const ASSETS = ["./", "index.html", "app.js", "manifest.json", "icon.svg"];
+const CACHE = "led-board-v11";
+const ASSETS = ["./", "index.html", "app.js", "manifest.json", "icon.svg", "icon-192.png", "icon-512.png", "icon-maskable.png"];
 self.addEventListener("install", (e) => {
   e.waitUntil(caches.open(CACHE).then((c) => c.addAll(ASSETS)));
   self.skipWaiting();

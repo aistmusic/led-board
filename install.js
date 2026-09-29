@@ -20,7 +20,7 @@ function hideToast() {
 }
 
 if (!standalone && ios) {
-  showToast("Safari: Udostepnij, potem Do ekranu poczatkowego.", false);
+  showToast("Safari: Udostępnij, potem Do ekranu początkowego.", false);
 }
 
 window.addEventListener("beforeinstallprompt", (e) => {

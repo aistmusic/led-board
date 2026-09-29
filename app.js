@@ -26,13 +26,12 @@ boldBtn.addEventListener("click",()=>{bold=!bold;dirty=true;syncLabels();save()}
 colorEl.addEventListener("input",()=>{dirty=true;save()});
 function setFs(on){document.body.classList.toggle("fs",on);requestAnimationFrame(()=>{resize();dirty=true});const root=document.documentElement;if(on){try{(root.requestFullscreen||root.webkitRequestFullscreen)?.call(root)}catch{}try{screen.orientation?.lock?.("landscape").catch(()=>{})}catch{}}else{try{if(document.fullscreenElement||document.webkitFullscreenElement){(document.exitFullscreen||document.webkitExitFullscreen)?.call(document)}}catch{}}}
 document.getElementById("fs").addEventListener("click",(e)=>{e.preventDefault();offsetPx=0;setFs(true)});
+document.getElementById("back").addEventListener("click",(e)=>{e.preventDefault();e.stopPropagation();setFs(false)});
 canvas.addEventListener("pointerup",(e)=>{
   if(e.pointerType==="mouse"&&e.button!==0)return;
-  e.preventDefault();
   offsetPx=0;
   if(!document.body.classList.contains("fs"))setFs(true);
 });
-canvas.addEventListener("touchend",(e)=>{if(document.body.classList.contains("fs"))e.preventDefault()},{passive:false});
 function nudge(id,dir){const el=document.getElementById(id);const min=Number(el.min),max=Number(el.max),step=Number(el.step)||1;const next=Math.min(max,Math.max(min,Number(el.value)+dir*step));if(next===Number(el.value))return;el.value=String(next);dirty=true;syncLabels();save()}
 let holdT=0,holdI=0;
 function startHold(btn){const id=btn.dataset.for,dir=btn.dataset.dir==="+"?1:-1;nudge(id,dir);clearTimeout(holdT);clearInterval(holdI);holdT=setTimeout(()=>{holdI=setInterval(()=>nudge(id,dir),70)},320)}
